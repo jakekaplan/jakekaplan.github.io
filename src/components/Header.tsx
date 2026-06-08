@@ -43,6 +43,9 @@ export function Header() {
         <Link to="/about" activeProps={{ className: 'active' }}>
           about
         </Link>
+        <Link to="/blog" activeProps={{ className: 'active' }}>
+          blog
+        </Link>
       </nav>
 
       <div className="header-actions">
