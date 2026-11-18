@@ -42,9 +42,6 @@ export function Header() {
         <Link to="/about" activeProps={{ className: 'active' }}>
           about
         </Link>
-        <Link to="/blog" activeProps={{ className: 'active' }}>
-          writing
-        </Link>
       </nav>
     </header>
   )

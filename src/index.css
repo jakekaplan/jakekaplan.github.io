@@ -84,6 +84,11 @@ a {
   display: grid;
 }
 
+/* The home page has nothing to scroll, so a finger dragged across it plays with the background instead */
+.app:has(.home) {
+  touch-action: pinch-zoom;
+}
+
 h1 {
   font-size: 1.5rem;
   font-weight: 500;
