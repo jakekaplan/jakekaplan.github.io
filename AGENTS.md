@@ -1,31 +1,32 @@
 # Jake Kaplan Personal Website
 
-Personal website for Jake Kaplan, software engineer. Features an interactive kinetic name animation with a persistent canvas background.
+Personal website for Jake Kaplan, software engineer. A simple dark page with slow, ever-shifting magic in the background.
 
 ## Style
 
-Warm minimalist aesthetic with an ambient, organic feel. The brush stroke motif evokes a calligraphic, hand-drawn quality. Clean and understated with subtle interactive depth.
+Simple and clear in front, quietly magical behind.
+
+- The foreground is plain: one monospace family, small type, a narrow centered column, no decoration.
+- The background is the one expressive element: dark smoke that never stops shifting, with a few drifting motes of light. It stays dim enough to read over, and dims further behind pages meant for reading.
+- The theme is atmosphere, not literal fantasy imagery. No runes, sigils, or game elements.
+- The background answers the pointer like real smoke: moving through it stirs it, the stirred smoke glows while it is still moving, and it drifts back to rest over a few seconds. A press puffs it outward.
+- Motion belongs to the background. The foreground only fades in when a page appears and responds to hover and focus.
 
 ## Architecture
 
-The site uses a **persistent background** pattern: a fullscreen canvas runs continuously behind all content and persists across route navigation.
+The site uses a **persistent background** pattern: a fullscreen WebGL canvas runs continuously behind all content and persists across route navigation.
 
 ```
-__root.tsx (Root Layout)
-├── ThemeProvider
-├── CanvasProvider
-├── ErrorBoundary
-└── .app
-    ├── Canvas (fullscreen, z-index: 1, persistent)
-    ├── Header (fixed top, z-index: 10)
-    ├── main (z-index: 5)
-    │   └── <Outlet /> (route content)
-    └── Footer (fixed bottom, z-index: 10)
+main.tsx (router, default not-found page)
+└── __root.tsx (Root Layout)
+    └── ErrorBoundary
+        ├── Background (fullscreen canvas, persistent)
+        └── .app
+            ├── Header (email, GitHub and LinkedIn links in the corner; nav)
+            ├── main
+            │   └── <Outlet /> (route content)
+            └── Footer (source link)
 ```
-
-Routes control canvas visibility via `CanvasContext`:
-- Home page shows letters on mount, hides on unmount
-- Dust particles always animate regardless of letter visibility
 
 ## Structure
 
@@ -33,25 +34,22 @@ Routes control canvas visibility via `CanvasContext`:
 src/
 ├── main.tsx                    # App entry point
 ├── routes/
-│   ├── __root.tsx              # Root layout + providers + persistent canvas
-│   ├── index.tsx               # Homepage (shows hint after letters settle)
-│   └── about.tsx               # About page
-├── hooks/useCanvas.ts          # Canvas orchestration (input, animation loop)
-├── contexts/
-│   ├── CanvasContext.tsx       # Canvas state (letter visibility, reset)
-│   └── ThemeContext.tsx        # Theme state (light/dark) + localStorage
+│   ├── __root.tsx              # Root layout + persistent background
+│   ├── index.tsx               # Homepage (name and one-line role)
+│   ├── about.tsx               # About page
+│   ├── blog.index.tsx          # Writing list
+│   └── blog.$slug.tsx          # Post
 ├── components/
-│   ├── Canvas.tsx              # Fullscreen canvas wrapper
-│   ├── Header.tsx              # Nav, social links, theme toggle, reset
-│   ├── Footer.tsx              # Source link
+│   ├── Background.tsx          # WebGL setup and animation loop
+│   ├── Background.frag         # Fragment shader that draws the background
+│   ├── Flow.frag               # Fragment shader that simulates the stirred smoke
+│   ├── NotFound.tsx
+│   ├── Header.tsx
+│   ├── Footer.tsx
 │   └── ErrorBoundary.tsx
 ├── lib/
-│   ├── physics.ts              # Letter physics (pure functions)
-│   ├── particles.ts            # Dust & collision particles
-│   ├── render.ts               # Canvas drawing functions
-│   └── text.ts                 # Text measurement utilities
-├── types.ts                    # Domain types (Letter, Point, Particle, etc.)
-├── constants.ts                # Tunable values (physics, colors, animation)
+│   └── blog.ts                 # Markdown post loading
+├── content/blog/               # Posts
 └── index.css
 ```
 
@@ -65,36 +63,19 @@ npm run lint      # Biome check
 npm run lint:fix  # Auto-fix
 ```
 
-## Physics
+## Background
 
-Letters behave as physical objects with:
+`Background.frag` draws the image: layered noise warped by more noise (the smoke), a ridge through it (the brighter wisps), and a sparse grid of flickering points (the motes). Everything fades toward the edges of the screen. The tunable values are the multipliers in `main()`; raise them carefully, since the page text sits directly on top.
 
-- **Gravity & Friction** - Letters fall and slow down over time
-- **Collisions** - Bounce off ground, walls, ceiling, and each other
-- **Restlessness** - Settled letters accumulate "restlessness" which grows over time
-- **Home Force** - Restless letters are pulled back toward their original position with force proportional to restlessness²
-- **Snap to Home** - When close enough to home and sufficiently restless, letters snap back and deactivate
+`Flow.frag` is the stirring. It keeps a small texture where each texel holds how fast the smoke there is moving and how far it has been pushed from rest. Every frame it carries that flow along itself, lets it fade, and adds a push along the path the pointer just travelled. `Background.frag` reads that texture to offset where it samples the smoke and to light the parts still moving. The push strength, how long motion lasts, and how slowly the smoke returns are the constants in `Flow.frag`.
 
-The loop: grab letter → falls with physics → settles → builds restlessness → returns home → snaps back.
+`Background.tsx` runs both shaders on one fullscreen triangle every frame: a flow step into an offscreen float texture, then the image. It needs WebGL2 with float render targets and leaves the plain `--night` page color showing without them. The image renders at half resolution because it is soft, and the flow at half of that again. When the visitor prefers reduced motion it draws a single still frame and ignores the pointer.
 
 ## Theming
 
-Light/dark mode with theme-specific brush strokes:
-- Light: warm cream background, orange accent, `warm-brush-stroke.png`
-- Dark: navy background, teal accent, `cool-brush-stroke.png`
-
-Theme colors are defined in two places that must stay in sync:
-- `constants.ts` → `THEME` object (for canvas rendering, includes brush stroke paths)
-- `index.css` → CSS variables in `:root` and `:root[data-theme="dark"]`
-
-The `constants.ts` values have inline comments showing their CSS variable counterparts.
+Dark only. Colors are CSS variables in `index.css` `:root`: `--night`, `--stone`, `--seam` for surfaces, `--ash`, `--mist`, `--moon` for text, and `--ember` for hover and focus. The shader has its own color constants at the top of `Background.frag`; keep `NIGHT` in sync with `--night`.
 
 ## Code Patterns
 
-- **Pure functions in `lib/`** - physics, particles, render, text are stateless and testable
-- **Hook orchestrates** - `useCanvas` owns refs and the animation loop, delegates to `lib/`
-- **Context for cross-route state** - `CanvasContext` allows routes to control canvas without prop drilling
-- **Types in `types.ts`** - domain types (Letter, Particle, etc.) are centralized
-- **Constants in `constants.ts`** - no magic numbers inline
-
-When adding new functionality, prefer pure functions in `lib/` over adding complexity to hooks.
+- **Styling in `index.css`** with plain class names; no inline styles
+- **Pure functions in `lib/`**, stateless and testable

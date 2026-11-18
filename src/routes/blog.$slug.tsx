@@ -21,18 +21,18 @@ function BlogPostPage() {
   const post = Route.useLoaderData()
 
   return (
-    <article className="blog-shell blog-post">
-      <Link className="blog-back-link" to="/blog">
-        ← all posts
+    <article className="page">
+      <Link className="back-link" to="/blog">
+        ← all writing
       </Link>
 
-      <header className="blog-post-header">
-        <div className="blog-meta">
-          <time dateTime={post.date}>{formatDate(post.date)}</time>
-          <span>{post.readingTime}</span>
-        </div>
+      <header className="post-header">
         <h1>{post.title}</h1>
-        {post.description ? <p>{post.description}</p> : null}
+        <p className="post-meta">
+          <time dateTime={post.date}>{formatDate(post.date)}</time>,{' '}
+          {post.readingTime}
+        </p>
+        {post.description ? <p className="lede">{post.description}</p> : null}
       </header>
 
       <div className="markdown-body">

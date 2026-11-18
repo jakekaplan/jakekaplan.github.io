@@ -5,28 +5,27 @@ function BlogIndexPage() {
   const posts = getBlogPosts()
 
   return (
-    <section className="blog-shell blog-index" aria-labelledby="blog-title">
-      <div className="blog-header">
-        <h1 id="blog-title">Blog</h1>
-        <p>
-          Occasional writing about software, craft, and things I'm learning.
-        </p>
-      </div>
+    <section className="page">
+      <h1>Writing</h1>
+      <p className="lede">
+        Occasional writing about software, craft, and things I'm learning.
+      </p>
 
-      <div className="blog-list">
+      <ul className="rows">
         {posts.map((post) => (
-          <article className="blog-card" key={post.slug}>
-            <Link to="/blog/$slug" params={{ slug: post.slug }}>
-              <div className="blog-meta">
-                <time dateTime={post.date}>{formatDate(post.date)}</time>
-                <span>{post.readingTime}</span>
-              </div>
-              <h2>{post.title}</h2>
-              {post.description ? <p>{post.description}</p> : null}
+          <li key={post.slug}>
+            <Link className="row" to="/blog/$slug" params={{ slug: post.slug }}>
+              <span className="row-title">{post.title}</span>
+              <time className="row-aside" dateTime={post.date}>
+                {formatDate(post.date)}
+              </time>
+              {post.description ? (
+                <span className="row-note">{post.description}</span>
+              ) : null}
             </Link>
-          </article>
+          </li>
         ))}
-      </div>
+      </ul>
     </section>
   )
 }
