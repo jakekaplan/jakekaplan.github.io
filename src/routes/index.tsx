@@ -5,7 +5,7 @@ function HomePage() {
     <section className="home">
       <h1>Jake Kaplan</h1>
       <p>
-        Right now: Staff engineer at{' '}
+        Staff engineer at{' '}
         <a
           href="https://www.prefect.io"
           target="_blank"
